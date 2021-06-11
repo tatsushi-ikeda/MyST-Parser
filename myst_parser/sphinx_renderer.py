@@ -122,6 +122,24 @@ class SphinxRenderer(DocutilsRenderer):
             self.doc_env.myst_anchors = True  # type: ignore[attr-defined]
         section["myst-anchor"] = doc_slug
 
+    def render_math_block(self, token: SyntaxTreeNode) -> None:
+        content = token.content
+
+        sphinx_env = self.document.settings.env
+        if sphinx_env.app.config.math_number_all:
+            seq = sphinx_env.new_serialno('sphinx.ext.math#equations')
+            label = "%s:%d" % (sphinx_env.docname, seq)
+            node = nodes.math_block(content, content, nowrap=False, number=seq, label=label)
+    
+            target = self.add_math_target(node)
+            self.add_line_and_source_path(target, token)
+            self.current_node.append(target)
+        else:
+            node = nodes.math_block(content, content, nowrap=False, number=None)
+
+        self.add_line_and_source_path(node, token)
+        self.current_node.append(node)
+        
     def render_math_block_eqno(self, token: SyntaxTreeNode) -> None:
         """Render math with referencable labels, e.g. ``$a=1$ (label)``."""
         label = token.info
